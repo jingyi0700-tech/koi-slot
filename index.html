@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>锦鲤老虎机 WebApp</title>
+
+<style>
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:radial-gradient(circle,#b30000,#3d0000);
+  color:white;
+  text-align:center;
+  overflow:hidden;
+}
+
+h1{ color:gold; margin-top:25px; }
+
+.machine{
+  margin:auto;
+  margin-top:30px;
+  width:320px;
+  background:#2b0000;
+  border:5px solid gold;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 0 20px gold;
+}
+
+.reels{
+  display:flex;
+  justify-content:space-between;
+  font-size:65px;
+  height:90px;
+}
+
+.reel{
+  width:30%;
+  background:black;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.spin{ animation:spin 0.12s linear infinite; }
+@keyframes spin{
+  0%{transform:translateY(-12px)}
+  50%{transform:translateY(12px)}
+  100%{transform:translateY(-12px)}
+}
+
+button{
+  margin-top:15px;
+  padding:14px 30px;
+  font-size:18px;
+  background:gold;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+button:active{ transform:scale(0.95); }
+
+.info{ font-size:20px; margin-top:8px; }
+
+.koi{
+  position:absolute;
+  font-size:40px;
+  animation:swim 18s linear infinite;
+  opacity:0.7;
+}
+@keyframes swim{0%{transform:translateX(-100px)}100%{transform:translateX(110vw)}}
+
+.coin{
+  position:absolute;
+  font-size:25px;
+  animation:fall 2s linear forwards;
+}
+@keyframes fall{0%{transform:translateY(-100px)}100%{transform:translateY(110vh)}}
+
+@media(max-width:600px){
+  .machine{width:260px;}
+  .reels{font-size:50px;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="koi" style="top:20%">🎏</div>
+<div class="koi" style="top:60%;animation-duration:22s">🎏</div>
+
+<h1>🎏 锦鲤老虎机 🎏</h1>
+
+<div class="machine">
+<div class="reels">
+<div class="reel" id="r1">🎏</div>
+<div class="reel" id="r2">🎏</div>
+<div class="reel" id="r3">🎏</div>
+</div>
+<div class="info" id="coins">Coins: 100</div>
+<div class="info" id="high">High Score: 0</div>
+<button onclick="spin()">Spin</button>
+<button onclick="autoSpin()">Auto Spin</button>
+<p id="result"></p>
+</div>
+
+<script>
+let coins=100;
+let symbols=["🎏","🪙","🏮","🌸","☁️","🎋"];
+let high=localStorage.getItem("koi_high")||0;
+document.getElementById("high").innerText="High Score: "+high;
+let auto=false;
+
+function winSound(){
+  let ctx=new(window.AudioContext||window.webkitAudioContext)();
+  let o=ctx.createOscillator();
+  let g=ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.frequency.value=800; o.start();
+  g.gain.exponentialRampToValueAtTime(0.00001,ctx.currentTime+1);
+}
+
+function coinRain(){
+  for(let i=0;i<12;i++){
+    let c=document.createElement("div");
+    c.className="coin";
+    c.innerText="🪙";
+    c.style.left=Math.random()*100+"vw";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),2000);
+  }
+}
+
+function spin(){
+  if(coins<5){ document.getElementById("result").innerText="Coins 不够"; auto=false; return; }
+  coins-=5;
+  let r1=document.getElementById("r1");
+  let r2=document.getElementById("r2");
+  let r3=document.getElementById("r3");
+  r1.classList.add("spin"); r2.classList.add("spin"); r3.classList.add("spin");
+  setTimeout(()=>{
+    r1.classList.remove("spin"); r2.classList.remove("spin"); r3.classList.remove("spin");
+    let s1=symbols[Math.floor(Math.random()*symbols.length)];
+    let s2=symbols[Math.floor(Math.random()*symbols.length)];
+    let s3=symbols[Math.floor(Math.random()*symbols.length)];
+    r1.innerText=s1; r2.innerText=s2; r3.innerText=s3;
+    let reward=0;
+    if(s1===s2 && s2===s3){
+      if(s1==="🎏") reward=300;
+      else if(s1==="🪙") reward=150;
+      else reward=80;
+      coins+=reward;
+      winSound(); coinRain();
+      document.getElementById("result").innerText="🎉 大奖 +"+reward;
+    }else{
+      document.getElementById("result").innerText="再试一次";
+    }
+    if(coins>high){ high=coins; localStorage.setItem("koi_high",high); }
+    document.getElementById("coins").innerText="Coins: "+coins;
+    document.getElementById("high").innerText="High Score: "+high;
+    if(auto){ setTimeout(spin,1200); }
+  },1200);
+}
+
+function autoSpin(){ auto=!auto; if(auto){ spin(); } }
+</script>
+
+</body>
+</html>
